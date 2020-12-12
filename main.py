@@ -1,14 +1,16 @@
 import datetime
 import time
 
-import yaml
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-import csv
+
+# To remove Chrome console from .exe add creationflags=CREATE_NO_WINDOW parameter to Lib\site-packages\selenium\webdriver\common\services.py method of subprocess.Popen(**)
+# from win32process import CREATE_NO_WINDOW
+# pyinstaller --onefile -w main.py
 
 driver = webdriver.Chrome('chromedriver/chromedriver.exe')
 driver.get("http://www.instagram.com")
@@ -18,7 +20,6 @@ wait = WebDriverWait(driver, 40)
 username = ''
 password = ''
 followers = []
-
 
 
 def login():
@@ -40,7 +41,6 @@ def login():
             ec.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Not Now')]"))).click()
     except TimeoutException:
         pass
-
 
 
 def track_followers():
@@ -150,6 +150,7 @@ def add_suggested():
             except TimeoutException:
                 pass
 
+        # Safety precautions to not get account suspended for being a bot.  Max 15 people a day in this scenario.
         if added == 15:
             break
         added += 1
@@ -157,19 +158,21 @@ def add_suggested():
         time.sleep(10)
 
 
+def give_em_love(runtime):
+    try:
+        wait.until(ec.presence_of_all_elements_located((By.XPATH, "//*[local-name()='svg'][@aria-label='Like'][@width='24']")))
+        wait.until(ec.visibility_of_all_elements_located((By.XPATH, "//*[local-name()='svg'][@aria-label='Like'][@width='24']")))
+    except TimeoutException:
+        pass
 
-def give_em_love():
-    wait.until(ec.presence_of_all_elements_located((By.XPATH, "//*[local-name()='svg'][@aria-label='Like']")))
-    wait.until(ec.visibility_of_all_elements_located((By.XPATH, "//*[local-name()='svg'][@aria-label='Like']")))
-    hearts = driver.find_elements_by_xpath("//*[local-name()='svg'][@aria-label='Like']//*[local-name()='path']")
+    hearts = driver.find_elements_by_xpath("//*[local-name()='svg'][@aria-label='Like'][@width='24']")
     for heart in hearts:
         ActionChains(driver).move_to_element(heart).click(heart).perform()
         time.sleep(1)
 
-    runtime = time.perf_counter()
-    more_hearts = driver.find_elements_by_xpath("//*[local-name()='svg'][@aria-label='Like']//*[local-name()='path']")
-    if more_hearts and runtime < 2000:
-        give_em_love()
+    more_hearts = driver.find_elements_by_xpath("//*[local-name()='svg'][@aria-label='Like'][@width='24']")
+    if more_hearts and runtime < 700:
+        give_em_love(runtime)
     else:
         print('exit recursion')
 
@@ -195,8 +198,10 @@ def main():
     time.sleep(2)
     # Go Home
     wait.until(ec.element_to_be_clickable((By.XPATH, "//*[local-name()='svg'][@aria-label='Home']"))).click()
-    give_em_love()
+    runtime = time.perf_counter()
+    give_em_love(runtime)
 
+    driver.close()
 
 
 if __name__ == '__main__':
