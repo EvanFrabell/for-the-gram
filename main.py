@@ -1,5 +1,7 @@
 import datetime
+import subprocess
 import time
+from distutils import command
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -11,12 +13,16 @@ from selenium.webdriver.support import expected_conditions as ec
 # To remove Chrome console from .exe add creationflags=CREATE_NO_WINDOW parameter to Lib\site-packages\selenium\webdriver\common\services.py method of subprocess.Popen(**)
 # from win32process import CREATE_NO_WINDOW
 # pyinstaller --onefile -w main.py
-
-driver = webdriver.Chrome('chromedriver/chromedriver.exe')
+# Python\Lib\site-packages\selenium\webdriver\common\service.py || self.process = subprocess.Popen(cmd, stdin=PIPE, stdout=PIPE ,stderr=PIPE, shell=False, creationflags=0x08000000)
+options = webdriver.ChromeOptions()
+options.add_experimental_option('excludeSwitches', ['enable-logging'])
+driver = webdriver.Chrome(executable_path='chromedriver/chromedriver.exe', options=options)
+driver.maximize_window()
 driver.get("http://www.instagram.com")
 # driver.implicitly_wait(5)
 wait = WebDriverWait(driver, 40)
 
+# username not email!!!
 username = ''
 password = ''
 followers = []
@@ -105,7 +111,7 @@ def remove_nonfollowing():
     for folls in following_list:
         if folls.text not in followers:
             print(folls.text + " Removed")
-            time.sleep(150)
+            time.sleep(60)
             wait.until(ec.element_to_be_clickable((By.XPATH, f"(//button[contains(text(), 'Follow')])[{xpath}]"))).click()
             wait.until(ec.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Unfollow')]"))).click()
         xpath += 1
@@ -151,7 +157,7 @@ def add_suggested():
                 pass
 
         # Safety precautions to not get account suspended for being a bot.  Max 15 people a day in this scenario.
-        if added == 15:
+        if added == 20:
             break
         added += 1
 
